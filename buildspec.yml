@@ -1,0 +1,28 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto11   # Specify the Java version, e.g., Corretto 8 or 11
+    commands:
+      - echo Installing Maven
+      - apt-get update -y
+      - apt-get install -y maven  # Install Maven
+
+  pre_build:
+    commands:
+      - echo Starting the pre_build phase...
+      - mvn -version  # Check Maven version
+
+  build:
+    commands:
+      - echo Building the Spring Boot application...
+      - mvn clean package  # Compile and package the application
+
+  post_build:
+    commands:
+      - echo Build completed on `date`
+
+artifacts:
+  files:
+    - target/*.jar  # Output JAR file from the build process

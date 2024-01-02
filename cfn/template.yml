@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS CloudFormation Template for Spring Boot Application
+
+Parameters:
+  VPCId:
+    Description: VPC ID where the resources will be deployed
+    Type: AWS::EC2::VPC::Id
+
+  SubnetId:
+    Description: Subnet ID for the EC2 instance
+    Type: AWS::EC2::Subnet::Id
+
+  DBSubnetGroupName:
+    Description: DB Subnet Group Name
+    Type: String
+
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.micro
+
+  KeyName:
+    Description: EC2 KeyPair to enable SSH access to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+
+  DBInstanceClass:
+    Description: Database instance class
+    Type: String
+    Default: db.t2.micro
+
+  DBName:
+    Description: Database Name
+    Type: String
+
+  DBUser:
+    Description: Database Admin User
+    Type: String
+
+  DBPassword:
+    Description: Database Admin Password
+    Type: String
+    NoEcho: true
+
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref SubnetId
+      KeyName: !Ref KeyName
+      ImageId: ami-0abcdef1234567890 # Replace with a valid AMI ID for your preferred region
+      SecurityGroupIds:
+        - Ref: InstanceSecurityGroup
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH and TCP port 8080 for Spring Boot
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+
+  MyDBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBName: !Ref DBName
+      AllocatedStorage: 20
+      DBInstanceClass: !Ref DBInstanceClass
+      Engine: mysql
+      MasterUsername: !Ref DBUser
+      MasterUserPassword: !Ref DBPassword
+      DBSubnetGroupName: !Ref DBSubnetGroupName
+      VPCSecurityGroups:
+        - Ref: DBSecurityGroup
+
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SQL port for RDS
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: 0.0.0.0/0
+
+Outputs:
+  EC2InstancePublicIP:
+    Description: Public IP of the EC2 instance
+    Value: !GetAtt MyEC2Instance.PublicIp
+
+  DatabaseEndpoint:
+    Description: Endpoint of the RDS instance
+    Value: !GetAtt MyDBInstance.Endpoint.Address
